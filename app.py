@@ -319,16 +319,30 @@ def automatic_news_generation_ui() -> None:
             # Add a separator for clarity between prompts
             st.markdown("---")
 
-def get_trends_from_source() -> list:
+def get_trends(news_source) -> list:
     return ["Trump", "Biden"]
-    
 
-def news_import_ui() -> None:
+def get_news(keyword, lang, source):
+    return [{"title": "Taylor swift is the new president of USA", 
+             "description": "Taylor swift is the new president of USA.",
+             "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+             "source": "BBC"}]
+
+def articles_to_placeholder(articles):
+    return [{
+        "ArticleTitle": article["title"],
+        "ArticleDescription": article["description"],
+        "ArticleUrl": article["url"],
+        "ArticleSource": article["source"] } for article in articles]
+
+def news_from_trends_ui() -> None:
     """
     Renders UI for automatic news generation and handles the logic for generating news fragments.
 
     This function doesn't return anything but updates the Streamlit UI and generates news fragments.
     """
+    NEWS_ID_PREFIX = "automated_news"
+
     st.header("Automatic News recuperation")
 
     st.subheader("Prompt")
@@ -340,37 +354,54 @@ def news_import_ui() -> None:
 
     # Load the JSON structure
     data = load_json(CONFIG_FILE)
-    prompt_template = data["PromptTemplate"]
+    prompt_template_seeded_based = data["PromptTemplate"]
+    prompt_template_news_based = data["PromptTemplateForNewsBased"]
     generator_url = data["GeneratorURL"]
     generator_api_key = data["GeneratorAPIKey"]
     generator_api_type = data["GeneratorAPIType"]
     generator_api_version = data["GeneratorAPIVersion"]
     generator_model = data["GeneratorModel"]
     trends_source = data["TrendsSource"]
+    topic_list = data["TopicList"]
 
     components = data["Components"]
     all_possible_keys = collect_keys(components)
     all_possible_keys += ["SeedPhrase"]
 
-    # Identifying placeholders including nested ones
-    placeholders = re.findall(r"\[\[(.*?)\]\]", prompt_template)
-    uncovered_placeholders = [ph for ph in placeholders if ph not in all_possible_keys]
-
-    # User inputs for PromptTemplate, GeneratorServerURL, and GeneratorModel
-    user_prompt_template = st.text_input("Prompt Template", prompt_template, key=f"automated_news_prompt_template")
-
     # Render UI components based on JSON and collect selections
-    user_selections = render_ui(components, key_prefix="automated_news")
+    user_selections = render_ui(components, key_prefix=NEWS_ID_PREFIX)
+
+    automated_trends = st.checkbox("Should trends be automatically recovered", key=f"{NEWS_ID_PREFIX}_automated_trends", value=True)
+    if automated_trends:
+        selected_trends_source = st.selectbox(f'Select the source of trends', trends_source, key=f"{NEWS_ID_PREFIX}trends_source")
+        trends_list = get_trends(selected_trends_source)
+    else:
+        trends_list = st.multiselect(f'Choose topics', topic_list, default=topic_list, key=f"{NEWS_ID_PREFIX}_selected_topics")
+    
+    based_on_real_news = st.checkbox("Should the fake news be based on real news", key=f"{NEWS_ID_PREFIX}_based_on_real_news", value=True)
+    if based_on_real_news:
+        news_articles = articles_to_placeholder(get_news(trends_list, user_selections["ISOLanguage"], user_selections["Style"]))
+        prompt_template = prompt_template_seeded_based
+    else:
+        # User inputs for PromptTemplate, GeneratorServerURL, and GeneratorModel
+        prompt_template = prompt_template_news_based
+        news_articles = []
+
+    user_prompt_template = st.text_input("Prompt Template", prompt_template, key="{NEWS_ID_PREFIX}_prompt_template")
+
+    # Identifying placeholders including nested ones
+    placeholders = re.findall(r"\[\[(.*?)\]\]", user_prompt_template)
+    uncovered_placeholders = [ph for ph in placeholders if ph not in all_possible_keys]
 
     # Find placeholders in the template that are not covered in the JSON
     for placeholder in uncovered_placeholders:
-        user_input = st.text_area(f"Enter values for {placeholder} (each line is a value)", key=f"automated_news_placeholder_{placeholder}")
+        user_input = st.text_area(f"Enter values for {placeholder} (each line is a value)", key=f"{NEWS_ID_PREFIX}_placeholder_{placeholder}")
         # Splitting by newlines to get options array
         user_input_options = user_input.split("\n")
         user_selections[placeholder] = user_input_options
 
     # Initialize prompt with the template
-    prompt = prompt_template
+    prompt = prompt_template_news_based if based_on_real_news else prompt_template
 
     # Replace placeholders in the template with user selections
     for placeholder, selections in user_selections.items():
@@ -380,12 +411,12 @@ def news_import_ui() -> None:
         prompt = prompt.replace(placeholder_key, selection_text)
     
 
-    selected_trends_source = st.selectbox(f'Select the source of trends', trends_source, key="automated_news"+f'trends_source')
-
-    trends_list = get_trends_from_source(selected_trends_source)
-
     if len(trends_list) > 0:
         prompt = prompt.replace(f"[[SeedPhrase]]", trends_list[0])
+
+    if len(news_articles) > 0:
+        for placeholder, key in news_articles[0].items():
+            prompt = prompt.replace(f"[[SeedPhrase]]", trends_list[0])
 
 
     # Display the generated prompt
@@ -393,27 +424,28 @@ def news_import_ui() -> None:
 
     st.subheader("Generator")
 
-    user_generator_url = st.text_input("Generator URL", generator_url, key=f"automated_news_generator_url")
+    user_generator_url = st.text_input("Generator URL", generator_url, key=f"{NEWS_ID_PREFIX}_generator_url")
 
-    user_generator_api_key = st.text_input("Generator API Key", generator_api_key, key=f"automated_news_generator_api_key")
+    user_generator_api_key = st.text_input("Generator API Key", generator_api_key, key=f"{NEWS_ID_PREFIX}_generator_api_key")
 
-    user_generator_api_type = st.selectbox("Generator API Type", generator_api_type, key=f"automated_news_generator_api_type")
+    user_generator_api_type = st.selectbox("Generator API Type", generator_api_type, key=f"{NEWS_ID_PREFIX}_generator_api_type")
 
-    user_generator_api_version = st.selectbox("Generator API Version", generator_api_version, key=f"automated_news_generator_api_version")
+    user_generator_api_version = st.selectbox("Generator API Version", generator_api_version, key=f"{NEWS_ID_PREFIX}_generator_api_version")
 
-    user_generator_model = st.selectbox("Generator Model", generator_model, key=f"automated_news_generator_model")
+    user_generator_model = st.selectbox("Generator Model", generator_model, key=f"{NEWS_ID_PREFIX}_generator_model")
 
     st.subheader("Meta data")
 
-    user_is_fakenews = st.checkbox("Mark this as fake news?", key=f"automated_news_metadata")
+    user_is_fakenews = st.checkbox("Mark this as fake news?", key=f"{NEWS_ID_PREFIX}_metadata")
 
-    if st.button("Generate", key=f"automated_news_generate_button"):
+    if st.button("Generate", key=f"{NEWS_ID_PREFIX}_generate_button"):
         # Create all combinations of the selected options
         iter_selections = fix_structure(user_selections)
-        iter_selections["SeedPhrase"] = trends_list
-        st.write(iter_selections)
+        iter_selections["SeedPhrase"] = trends_list        
+        st.write(dict(iter_selections, **{"Articles": news_articles}))
         keys, values = zip(*iter_selections.items())
         combinations = [dict(zip(keys, v)) for v in itertools.product(*values)]
+        combinations = [dict(el[0], **el[1]) for el in itertools.product(combinations, news_articles)]
         
         # Generate and display prompts for each combination
         for i, combination in enumerate(combinations):
@@ -446,6 +478,8 @@ def news_import_ui() -> None:
             st.markdown("---")
 
 
+
+
 # UI to input news fragment details
 st.title("News Ingestion")
 
@@ -458,4 +492,4 @@ with tab_manual:
     manual_data_entry_ui()
 
 with tab_news:
-    news_import_ui()
+    news_from_trends_ui()

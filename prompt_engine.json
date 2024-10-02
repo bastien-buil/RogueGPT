@@ -1,5 +1,6 @@
 {
     "PromptTemplate": "Write a [[Format]] about '''[[SeedPhrase]]''' in [[Language]] in the style of [[Style]]. Write only the content, no introduction, no explanation, no disclaimer, no translation.",
+    "PromptTemplateForNewsBased": "AAWrite a [[Format]] about '''[[SeedPhrase]]''' in [[Language]] in the style of [[Style]]. Write only the content, no introduction, no explanation, no disclaimer, no translation.",
     "GeneratorURL": "http://localhost:1234/v1",
     "GeneratorAPIKey": "not-needed",
     "GeneratorAPIType": [
@@ -80,8 +81,13 @@
       ]
     },
     "TrendsSource": [
-      "Google Trends",
-      "Reddit"
+      "Google Trends"
+    ],
+    "TopicList": [
+      "politics",
+      "war",
+      "Taylor Swift",
+      "Olympics"
     ]
   }
   
