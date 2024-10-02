@@ -9,6 +9,8 @@ from typing import Dict, List, Optional, Union
 from datetime import datetime
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+from googletrends import get_google_trends
+from news import get_news
 
 __name__ = "RogueGPT"
 __version__ = "0.9.2"
@@ -320,13 +322,15 @@ def automatic_news_generation_ui() -> None:
             st.markdown("---")
 
 def get_trends(news_source) -> list:
+    if "Google Trends"== news_source:
+        return get_google_trends()
     return ["Trump", "Biden"]
 
-def get_news(keyword, lang, source):
-    return [{"title": "Taylor swift is the new president of USA", 
-             "description": "Taylor swift is the new president of USA.",
-             "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-             "source": "BBC"}]
+#def get_news(keyword, lang, source):
+#    return [{"title": "Taylor swift is the new president of USA", 
+#             "description": "Taylor swift is the new president of USA.",
+#             "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+#             "source": "BBC"}]
 
 def articles_to_placeholder(articles):
     return [{

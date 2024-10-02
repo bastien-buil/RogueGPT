@@ -1,4 +1,4 @@
-from google import get_google_trends
+from googletrends import get_google_trends
 from newsapi import NewsApiClient
 
 key = 'c0a7fb769ee4458cb4ec3fcc53e89dd7'
@@ -38,12 +38,14 @@ def get_news(
         return article
     else:
         print("no articles found")
-        return None
+        return []
 
-google_trend = get_google_trends()[0]
 
-article = get_news(google_trend)
-if article != None:
-    print(article.pretty_print())
-    print("\n\nGenerating prompt!")
-    print(article.generate_prompt())
+if __name__ == "__main__":
+    google_trend = get_google_trends()[0]
+
+    article = get_news(google_trend)
+    if article != None:
+        print(article.pretty_print())
+        print("\n\nGenerating prompt!")
+        print(article.generate_prompt())
