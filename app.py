@@ -334,10 +334,10 @@ def get_trends(news_source) -> list:
 
 def articles_to_placeholder(articles):
     return [{
-        "ArticleTitle": article["title"],
-        "ArticleDescription": article["description"],
-        "ArticleUrl": article["url"],
-        "ArticleSource": article["source"] } for article in articles]
+        "ArticleTitle": article.title,
+        "ArticleDescription": article.description,
+        "ArticleUrl": article.url} for article in articles]
+        #"ArticleSource": article.source TODO
 
 def news_from_trends_ui() -> None:
     """
@@ -371,6 +371,7 @@ def news_from_trends_ui() -> None:
     components = data["Components"]
     all_possible_keys = collect_keys(components)
     all_possible_keys += ["SeedPhrase"]
+    all_possible_keys += ["ArticleTitle", "ArticleDescription", "ArticleUrl"]
 
     # Render UI components based on JSON and collect selections
     user_selections = render_ui(components, key_prefix=NEWS_ID_PREFIX)
@@ -384,12 +385,11 @@ def news_from_trends_ui() -> None:
     
     based_on_real_news = st.checkbox("Should the fake news be based on real news", key=f"{NEWS_ID_PREFIX}_based_on_real_news", value=True)
     if based_on_real_news:
-        news_articles = articles_to_placeholder(get_news(trends_list, user_selections["ISOLanguage"], user_selections["Style"]))
-        prompt_template = prompt_template_seeded_based
+        prompt_template = prompt_template_news_based
     else:
         # User inputs for PromptTemplate, GeneratorServerURL, and GeneratorModel
-        prompt_template = prompt_template_news_based
-        news_articles = []
+        prompt_template = prompt_template_seeded_based
+
 
     user_prompt_template = st.text_input("Prompt Template", prompt_template, key="{NEWS_ID_PREFIX}_prompt_template")
 
@@ -418,9 +418,12 @@ def news_from_trends_ui() -> None:
     if len(trends_list) > 0:
         prompt = prompt.replace(f"[[SeedPhrase]]", trends_list[0])
 
-    if len(news_articles) > 0:
-        for placeholder, key in news_articles[0].items():
-            prompt = prompt.replace(f"[[SeedPhrase]]", trends_list[0])
+    
+
+    # TODO
+    #if len(news_articles) > 0:
+    #    for placeholder, key in news_articles[0].items():
+    #        prompt = prompt.replace(f"[[{placeholder}]]", trends_list[0])
 
 
     # Display the generated prompt
@@ -443,6 +446,16 @@ def news_from_trends_ui() -> None:
     user_is_fakenews = st.checkbox("Mark this as fake news?", key=f"{NEWS_ID_PREFIX}_metadata")
 
     if st.button("Generate", key=f"{NEWS_ID_PREFIX}_generate_button"):
+        if based_on_real_news:
+            news_articles = []
+            for news_keyword in trends_list:
+                news = get_news(news_keyword, user_selections["ISOLanguage"][0])
+                if news is not None:
+                    news_articles.append(news)
+            news_articles = articles_to_placeholder(news_articles)
+        else:
+            news_articles = []
+        
         # Create all combinations of the selected options
         iter_selections = fix_structure(user_selections)
         iter_selections["SeedPhrase"] = trends_list        

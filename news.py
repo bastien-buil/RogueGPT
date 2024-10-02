@@ -29,7 +29,7 @@ def get_news(
         sort_by='relevancy',
         domains=source,
     )
-    if len(articles['articles']) != 0:
+    if len(articles['articles']) != 0 and articles['articles'][0]['description'] is not None:
         article = Article(
             title=articles['articles'][0]['title'],
             description=articles['articles'][0]['description'].replace('.', '.\n'),
@@ -38,7 +38,7 @@ def get_news(
         return article
     else:
         print("no articles found")
-        return []
+        return None
 
 
 if __name__ == "__main__":

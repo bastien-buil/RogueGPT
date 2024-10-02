@@ -1,6 +1,6 @@
 {
     "PromptTemplate": "Write a [[Format]] about '''[[SeedPhrase]]''' in [[Language]] in the style of [[Style]]. Write only the content, no introduction, no explanation, no disclaimer, no translation.",
-    "PromptTemplateForNewsBased": "Write a [[Format]]  similar to [[ArticleTitle]].\nAbout '''[[ArticleDescription]]''' with fake information in [[Language]] in the style of [[Style]]. Write only the content, no introduction, no explanation, no disclaimer, no translation.",
+    "PromptTemplateForNewsBased": "Write a [[Format]] which is a fake news similar to [[ArticleTitle]] which is about '''[[ArticleDescription]]'''. Put some fake informations in the text. The text must be in [[Language]] in the style of [[Style]]. Write only the content, no introduction, no explanation, no disclaimer, no translation. Do not use words as fake news or fantasy.",
     "GeneratorURL": "http://localhost:1234/v1",
     "GeneratorAPIKey": "not-needed",
     "GeneratorAPIType": [
