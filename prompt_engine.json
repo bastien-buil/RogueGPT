@@ -78,6 +78,10 @@
         "headline",
         "short article"
       ]
-    }
+    },
+    "TrendsSource": [
+      "Google Trends",
+      "Reddit"
+    ]
   }
   
