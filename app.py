@@ -334,9 +334,9 @@ def get_trends(news_source) -> list:
 
 def articles_to_placeholder(articles):
     return [{
-        "ArticleTitle": article.title,
-        "ArticleDescription": article.description,
-        "ArticleUrl": article.url} for article in articles]
+        "SourceArticleTitle": article.title,
+        "SourceArticleDescription": article.description,
+        "SourceArticleUrl": article.url} for article in articles]
         #"ArticleSource": article.source TODO
 
 def news_from_trends_ui() -> None:
@@ -371,7 +371,7 @@ def news_from_trends_ui() -> None:
     components = data["Components"]
     all_possible_keys = collect_keys(components)
     all_possible_keys += ["SeedPhrase"]
-    all_possible_keys += ["ArticleTitle", "ArticleDescription", "ArticleUrl"]
+    all_possible_keys += ["SourceArticleTitle", "SourceArticleDescription", "SourceArticleUrl"]
 
     # Render UI components based on JSON and collect selections
     user_selections = render_ui(components, key_prefix=NEWS_ID_PREFIX)
@@ -441,9 +441,9 @@ def news_from_trends_ui() -> None:
 
     user_generator_model = st.selectbox("Generator Model", generator_model, key=f"{NEWS_ID_PREFIX}_generator_model")
 
-    st.subheader("Meta data")
+    st.subheader("News Source config")
 
-    user_is_fakenews = st.checkbox("Mark this as fake news?", key=f"{NEWS_ID_PREFIX}_metadata")
+    recover_original_news = st.checkbox("Put the retrieve news in the database", value=True )
 
     if st.button("Generate", key=f"{NEWS_ID_PREFIX}_generate_button"):
         if based_on_real_news:
@@ -452,11 +452,32 @@ def news_from_trends_ui() -> None:
                 news = get_news(news_keyword, user_selections["ISOLanguage"][0])
                 if news is not None:
                     news_articles.append(news)
-            news_articles = articles_to_placeholder(news_articles)
+                    st.write(news)
         else:
             news_articles = []
+
+        if recover_original_news:
+            for news_article in news_articles:
+                news_combination = {
+                    "FragmentID": uuid.uuid4().hex,
+                    "Content": news_article.description,
+                    "Origin": "Human",
+                    "HumanOutlet": "TODO", # news_article.
+                    "HumanURL": news_article.url,
+                    "MachineModel": "",
+                    "MachinePrompt": "",
+                    "ISOLanguage": user_selections["Language"],
+                    "IsFake": False,
+                    "CreationDate": datetime.today()
+                }
+                save_fragment(news_combination)
+
+
+        # TODO recover_original_news
+        
         
         # Create all combinations of the selected options
+        news_articles = articles_to_placeholder(news_articles)
         iter_selections = fix_structure(user_selections)
         iter_selections["SeedPhrase"] = trends_list        
         st.write(dict(iter_selections, **{"Articles": news_articles}))
@@ -480,16 +501,19 @@ def news_from_trends_ui() -> None:
                 api_version = user_generator_api_version,
                 model = user_generator_model
             )
+            
 
             combination["FragmentID"] = uuid.uuid4().hex
             combination["Content"] = generated_fragment
             combination["Origin"] = "Machine"
             combination["MachineModel"] = user_generator_model
             combination["MachinePrompt"] = prompt_filled
-            combination["IsFake"] = user_is_fakenews
+            combination["IsFake"] = True
             combination["CreationDate"] = datetime.today()
 
+            #if st.button("Save to DB", key=f"{NEWS_ID_PREFIX}_save_to_db_button_{i}"):
             save_fragment(combination)
+
 
             # Add a separator for clarity between prompts
             st.markdown("---")
@@ -500,13 +524,13 @@ def news_from_trends_ui() -> None:
 # UI to input news fragment details
 st.title("News Ingestion")
 
-tab_generaor, tab_manual, tab_news = st.tabs(["Generator", "Manual Data Entry", "Automated news import"])
+tab_news, tab_generaor, tab_manual = st.tabs(["Automated news import", "Generator", "Manual Data Entry"])
+
+with tab_news:
+    news_from_trends_ui()
 
 with tab_generaor:
     automatic_news_generation_ui()
 
 with tab_manual:
     manual_data_entry_ui()
-
-with tab_news:
-    news_from_trends_ui()
