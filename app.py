@@ -453,7 +453,11 @@ def news_from_trends_ui() -> None:
                 news = get_news(news_keyword, user_selections["ISOLanguage"][0])
                 if news is not None:
                     news_articles.append(news)
-                    st.write(news)
+                    st.write({"articleTitle": news.title,
+                            "articleDescription": news.description,
+                            "articleUrl": news.url,
+                            "articleSource": news.convert_url()
+                            })
         else:
             news_articles = []
 
