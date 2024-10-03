@@ -31,8 +31,5 @@ def get_reddit_headlines(
     # posts
     if len(headlines) > 2:
         return headlines[2:]
-    raise ValueError("Did not manage to find ")
+    raise ValueError("Did not manage to find headlines.")
         
-headlines = get_reddit_headlines()
-
-print("yes")
