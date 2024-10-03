@@ -336,8 +336,9 @@ def articles_to_placeholder(articles):
     return [{
         "SourceArticleTitle": article.title,
         "SourceArticleDescription": article.description,
-        "SourceArticleUrl": article.url} for article in articles]
-        #"ArticleSource": article.source TODO
+        "SourceArticleUrl": article.url,
+        #"SourceArticleSource": article.source
+        } for article in articles]
 
 def news_from_trends_ui() -> None:
     """
@@ -462,7 +463,7 @@ def news_from_trends_ui() -> None:
                     "FragmentID": uuid.uuid4().hex,
                     "Content": news_article.description,
                     "Origin": "Human",
-                    "HumanOutlet": "TODO", # news_article.
+                    "HumanOutlet": news_article.convert_url(),
                     "HumanURL": news_article.url,
                     "MachineModel": "",
                     "MachinePrompt": "",
@@ -471,9 +472,6 @@ def news_from_trends_ui() -> None:
                     "CreationDate": datetime.today()
                 }
                 save_fragment(news_combination)
-
-
-        # TODO recover_original_news
         
         
         # Create all combinations of the selected options
