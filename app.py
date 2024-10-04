@@ -11,6 +11,7 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from googletrends import get_google_trends
 from news import get_news
+from get_reddit_headlines import get_reddit_headlines
 
 __name__ = "RogueGPT"
 __version__ = "0.9.2"
@@ -322,9 +323,11 @@ def automatic_news_generation_ui() -> None:
             st.markdown("---")
 
 def get_trends(news_source) -> list:
-    if "Google Trends"== news_source:
+    if "Google Trends" == news_source:
         return get_google_trends()
-    return ["Trump", "Biden"]
+    elif "Reddit" == news_source:
+        return get_reddit_headlines()
+    return []
 
 #def get_news(keyword, lang, source):
 #    return [{"title": "Taylor swift is the new president of USA", 
@@ -380,7 +383,7 @@ def news_from_trends_ui() -> None:
     automated_trends = st.checkbox("Should trends be automatically recovered", key=f"{NEWS_ID_PREFIX}_automated_trends", value=True)
     if automated_trends:
         selected_trends_source = st.selectbox(f'Select the source of trends', trends_source, key=f"{NEWS_ID_PREFIX}trends_source")
-        trends_list = get_trends(selected_trends_source)
+        trends_list = []
     else:
         trends_list = st.multiselect(f'Choose topics', topic_list, default=topic_list, key=f"{NEWS_ID_PREFIX}_selected_topics")
     
@@ -412,8 +415,9 @@ def news_from_trends_ui() -> None:
     for placeholder, selections in user_selections.items():
         placeholder_key = f"[[{placeholder}]]"
         # Use the first selection if available
-        selection_text = selections[0] if isinstance(selections, list) and selections else selections  
-        prompt = prompt.replace(placeholder_key, selection_text)
+        selection_text = selections[0] if isinstance(selections, list) and selections else selections
+        if isinstance(selection_text, str):
+            prompt = prompt.replace(placeholder_key, selection_text)
     
 
     if len(trends_list) > 0:
@@ -442,11 +446,14 @@ def news_from_trends_ui() -> None:
 
     user_generator_model = st.selectbox("Generator Model", generator_model, key=f"{NEWS_ID_PREFIX}_generator_model")
 
-    st.subheader("News Source config")
-
-    recover_original_news = st.checkbox("Put the retrieve news in the database", value=True )
+    recover_original_news = False
+    if based_on_real_news:
+        st.subheader("News Source config")
+        recover_original_news = st.checkbox("Put the retrieve news in the database", value=True )
 
     if st.button("Generate", key=f"{NEWS_ID_PREFIX}_generate_button"):
+        if automated_trends:
+            trends_list = get_trends(selected_trends_source)
         if based_on_real_news:
             news_articles = []
             for news_keyword in trends_list:
@@ -471,7 +478,7 @@ def news_from_trends_ui() -> None:
                     "HumanURL": news_article.url,
                     "MachineModel": "",
                     "MachinePrompt": "",
-                    "ISOLanguage": user_selections["Language"],
+                    "ISOLanguage": user_selections["ISOLanguage"][0],
                     "IsFake": False,
                     "CreationDate": datetime.today()
                 }
@@ -481,11 +488,13 @@ def news_from_trends_ui() -> None:
         # Create all combinations of the selected options
         news_articles = articles_to_placeholder(news_articles)
         iter_selections = fix_structure(user_selections)
-        iter_selections["SeedPhrase"] = trends_list        
-        st.write(dict(iter_selections, **{"Articles": news_articles}))
+        iter_selections["SeedPhrase"] = trends_list
+        #if based_on_real_news:       
+        #    st.write(dict(iter_selections, **{"Articles": news_articles}))
         keys, values = zip(*iter_selections.items())
         combinations = [dict(zip(keys, v)) for v in itertools.product(*values)]
-        combinations = [dict(el[0], **el[1]) for el in itertools.product(combinations, news_articles)]
+        if based_on_real_news:       
+            combinations = [dict(el[0], **el[1]) for el in itertools.product(combinations, news_articles)]
         
         # Generate and display prompts for each combination
         for i, combination in enumerate(combinations):
