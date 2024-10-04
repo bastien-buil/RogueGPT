@@ -17,15 +17,15 @@ class Article:
         return "NEWS\n" + self.title + '\n\n' + self.description + '\n From: ' + self.url
 
     def convert_url(self):
-        if self.url.contains('nytimes.com'): # NYT
+        if 'nytimes.com' in self.url: # NYT
             return 'NYT'
-        elif self.url.contains('cnn.com'): # CNN
+        elif 'cnn.com' in self.url: # CNN
             return 'CNN'
-        elif self.url.contains('bbc.co.uk'): # BBC
+        elif 'bbc.co.uk' in self.url: # BBC
             return 'BBC'
-        elif self.url.contains('foxnews.com'): # Fox News
+        elif 'foxnews.com' in self.url: # Fox News
             return 'Fox News'
-        elif self.url.contains('wsj.com'): # WSJ
+        elif 'wsj.com' in self.url: # WSJ
             return 'WSJ'
         else:
             return 'Unknown source'
